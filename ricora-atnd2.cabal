@@ -1,0 +1,29 @@
+Name:                ricora-atnd2
+Version:             0.1
+License:             LGPL-3
+License-File:        LICENSE
+Author:              Keita Mizuochi
+Maintainer:          mizon9@gmail.com
+Category:            Web
+Build-Type:          Simple
+Cabal-Version:       >= 1.8
+
+Executable ricora-atnd2.cgi
+    Main-Is: ricora-atnd2.hs
+    Build-Depends:
+          HDBC-sqlite3 >= 2.3
+        , HDBC >= 2.3
+        , warp >= 1.2
+        , wai-extra >= 1.2
+        , wai >= 1.2
+        , http-types >= 0.6
+        , heist >= 0.8
+        , text >= 0.11
+        , bytestring >= 0.9
+        , blaze-builder >= 0.3
+        , resourcet >= 0.3
+        , xmlhtml >= 0.2
+        , base >= 4.0
+        , mtl >= 2.0
+        , placeholders >= 0.1
+    GHC-Options: -Wall -O2
