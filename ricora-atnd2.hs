@@ -8,8 +8,10 @@ import qualified Network.Wai.Parse as WP
 import qualified Network.Wai as W
 import qualified Network.HTTP.Types as HT
 import qualified Text.Templating.Heist as H
+import qualified Data.Digest.Pure.SHA as S
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text as T
+import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Char8 as BS
 import qualified Blaze.ByteString.Builder as BB
 import qualified Control.Monad.Trans.Resource as Re
@@ -28,6 +30,7 @@ data HandlerContext = HandlerContext
     { heistState :: H.HeistState Handler
     , request :: W.Request
     , dbConnection :: DB.ConnWrapper
+    , config :: Config
     }
 
 type Handler = ErrorT EResponse (ReaderT HandlerContext (Re.ResourceT IO))
@@ -40,16 +43,22 @@ instance Error EResponse where
 data Attendee = Attendee
     { attendeeName :: T.Text
     , attendeeComment :: T.Text
+    , attendeeEncryptedPassword :: BSL.ByteString
+    }
+
+data Config = Config
+    { configSalt :: BSL.ByteString
     }
 
 runHandler :: Handler W.Response -> HandlerContext -> Re.ResourceT IO W.Response
 runHandler h ctx = either unEResponse id <$> runReaderT (runErrorT h) ctx
 
-application :: H.HeistState Handler -> DB.ConnWrapper -> W.Application
-application h conn req = runHandler (routing req) HandlerContext
+application :: H.HeistState Handler -> DB.ConnWrapper -> Config -> W.Application
+application h conn c req = runHandler (routing req) HandlerContext
     { heistState = h
     , request = req
     , dbConnection = conn
+    , config = c
     }
 
 routing :: W.Request -> Handler W.Response
@@ -73,11 +82,18 @@ handlerNewAttendee = do
     params <- getParams
     name <- refParam "attendee-name" params
     comment <- refParam "attendee-comment" params
-    validate Attendee {attendeeName = name, attendeeComment = comment}
+    encrypted <- refEncryptedPassword "attendee-password" params
+    validate Attendee
+        { attendeeName = name
+        , attendeeComment = comment
+        , attendeeEncryptedPassword = encrypted
+        }
     conn <- asks dbConnection
-    void $ liftIO $ DB.run conn "INSERT INTO attendees (name, comment) VALUES (?, ?)"
+    void $ liftIO $ DB.run conn
+        "INSERT INTO attendees (name, comment, encrypted_password) VALUES (?, ?, ?)"
         [ DB.toSql name
         , DB.toSql comment
+        , DB.toSql encrypted
         ]
     liftIO $ DB.commit conn
     redirectResponse "/"
@@ -86,9 +102,13 @@ handlerDeleteAttendee :: Handler W.Response
 handlerDeleteAttendee = do
     params <- getParams
     id_ <- refParam "attendee-id" params
-    pw <- refParam "attendee-password" params
+    pw <- refEncryptedPassword "attendee-password" params
     conn <- asks dbConnection
-    nrows <- liftIO $ DB.run conn "DELETE FROM attendees WHERE id = ?" [DB.toSql id_]
+    nrows <- liftIO $ DB.run conn
+        "DELETE FROM attendees WHERE id = ? AND encrypted_password = ?"
+        [ DB.toSql id_
+        , DB.toSql pw
+        ]
     unless (nrows == 1)
         $ errorResponse ["invalid id or password"]
     liftIO $ DB.commit conn
@@ -128,6 +148,11 @@ validate a = unless (null errors) $ errorResponse errors
 refParam :: BS.ByteString -> [(BS.ByteString, T.Text)] -> Handler T.Text
 refParam key params = maybe fatalResponse pure $ lookup key params
 
+refEncryptedPassword :: BS.ByteString -> [(BS.ByteString, T.Text)] -> Handler BSL.ByteString
+refEncryptedPassword key params = encrypt
+    =<< BSL.fromChunks . return . TE.encodeUtf8
+    <$> refParam key params
+
 viewResponse :: [(T.Text, H.Splice Handler)] -> Handler W.Response
 viewResponse splices = do
     heist <- asks heistState
@@ -156,6 +181,11 @@ getParams = do
   where
     toText (k, v) = (k, TE.decodeUtf8 v)
 
+encrypt :: BSL.ByteString -> Handler BSL.ByteString
+encrypt str = S.bytestringDigest . S.sha1 <$> (BSL.append
+    <$> (configSalt <$> asks config)
+    <*> pure str)
+
 main :: IO ()
 main = serverMain =<< loadApp
   where
@@ -174,3 +204,6 @@ main = serverMain =<< loadApp
     loadApp = application
         <$> (either error id <$> H.loadTemplates "./templates" H.defaultHeistState)
         <*> (DB.ConnWrapper <$> Sqlite3.connectSqlite3 "./test.sqlite3")
+        <*> pure Config
+            { configSalt = "foo"
+            }
