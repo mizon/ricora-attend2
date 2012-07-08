@@ -199,30 +199,16 @@ loadConfig :: Y.FromJSON a => FilePath -> IO a
 loadConfig = maybe (error "valid yaml file?") pure . Y.decode <=< BS.readFile
 
 main :: IO ()
-main = serverMain =<< loadApp
-  where
-    serverMain app = do
-        putStrLn $ "listening on " ++ show port
-        Warp.run port app
-      where
-        port = 3000
-
-    cgiMain = WCGI.run
-
-    reloading req = do
-        app <- liftIO $ loadApp
-        app req
-
-    loadApp = do
-        (conf :: M.Map BS.ByteString String) <- loadConfig configPath
-        heist <- either error id
-            <$> H.loadTemplates (conf M.! "templates-dir") H.defaultHeistState
-        conn <- DB.ConnWrapper <$> Sqlite3.connectSqlite3 (conf M.! "database-path")
-        ltable <- loadConfig $ conf M.! "locale-path"
-        return $ application heist conn Config
-            { configSalt = fromString $ conf M.! "salt"
-            , localizeTable = ltable
-            }
+main = do
+    (conf :: M.Map BS.ByteString String) <- loadConfig configPath
+    heist <- either error id
+        <$> H.loadTemplates (conf M.! "templates-dir") H.defaultHeistState
+    conn <- DB.ConnWrapper <$> Sqlite3.connectSqlite3 (conf M.! "database-path")
+    ltable <- loadConfig $ conf M.! "locale-path"
+    WCGI.run $ application heist conn Config
+        { configSalt = fromString $ conf M.! "salt"
+        , localizeTable = ltable
+        }
 
 configPath :: FilePath
-configPath = "./ricora-atnd2.yml"
+configPath = ""
