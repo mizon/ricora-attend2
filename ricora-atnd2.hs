@@ -8,11 +8,13 @@ import qualified Network.Wai.Parse as WP
 import qualified Network.Wai as W
 import qualified Network.HTTP.Types as HT
 import qualified Text.Templating.Heist as H
+import qualified Data.Yaml as Y
 import qualified Data.Digest.Pure.SHA as S
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text as T
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Char8 as BS
+import qualified Data.Map as M
 import qualified Blaze.ByteString.Builder as BB
 import qualified Control.Monad.Trans.Resource as Re
 import qualified Text.XmlHtml as X
@@ -48,6 +50,7 @@ data Attendee = Attendee
 
 data Config = Config
     { configSalt :: BSL.ByteString
+    , localizeTable :: M.Map BS.ByteString T.Text
     }
 
 runHandler :: Handler W.Response -> HandlerContext -> Re.ResourceT IO W.Response
@@ -185,6 +188,10 @@ getParams = do
   where
     toText (k, v) = (k, TE.decodeUtf8 v)
 
+localize :: BS.ByteString -> Handler T.Text
+localize key = localizeTable <$> asks config
+    >>= maybe fatalResponse pure . M.lookup key
+
 main :: IO ()
 main = serverMain =<< loadApp
   where
@@ -200,9 +207,12 @@ main = serverMain =<< loadApp
         app <- liftIO $ loadApp
         app req
 
-    loadApp = application
-        <$> (either error id <$> H.loadTemplates "./templates" H.defaultHeistState)
-        <*> (DB.ConnWrapper <$> Sqlite3.connectSqlite3 "./test.sqlite3")
-        <*> pure Config
+    loadApp = do
+        heist <- either error id <$> H.loadTemplates "./templates" H.defaultHeistState
+        conn <- DB.ConnWrapper <$> Sqlite3.connectSqlite3 "./test.sqlite3"
+        table <- maybe (error "error occured in parse yaml") pure . Y.decode
+            =<< BS.readFile "./locale.yaml"
+        return $ application heist conn Config
             { configSalt = "foo"
+            , localizeTable = table
             }
