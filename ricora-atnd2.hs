@@ -1,9 +1,7 @@
 {-# LANGUAGE OverloadedStrings
-           , ScopedTypeVariables
-           , TemplateHaskell #-}
+           , ScopedTypeVariables #-}
 import qualified Database.HDBC.Sqlite3 as Sqlite3
 import qualified Database.HDBC as DB
-import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.Wai.Handler.CGI as WCGI
 import qualified Network.Wai.Parse as WP
 import qualified Network.Wai as W
@@ -25,9 +23,6 @@ import Control.Monad.Reader
 import Control.Monad.Writer
 import Control.Monad.Error
 import Control.Applicative
-
-import Development.Placeholders
-import Debug.Trace
 
 data HandlerContext = HandlerContext
     { heistState :: H.HeistState Handler
