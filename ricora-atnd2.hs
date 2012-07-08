@@ -152,6 +152,10 @@ refEncryptedPassword :: BS.ByteString -> [(BS.ByteString, T.Text)] -> Handler BS
 refEncryptedPassword key params = encrypt
     =<< BSL.fromChunks . return . TE.encodeUtf8
     <$> refParam key params
+  where
+    encrypt str = S.bytestringDigest . S.sha1 <$> (BSL.append
+        <$> (configSalt <$> asks config)
+        <*> pure str)
 
 viewResponse :: [(T.Text, H.Splice Handler)] -> Handler W.Response
 viewResponse splices = do
@@ -180,11 +184,6 @@ getParams = do
     return $ toText <$> params
   where
     toText (k, v) = (k, TE.decodeUtf8 v)
-
-encrypt :: BSL.ByteString -> Handler BSL.ByteString
-encrypt str = S.bytestringDigest . S.sha1 <$> (BSL.append
-    <$> (configSalt <$> asks config)
-    <*> pure str)
 
 main :: IO ()
 main = serverMain =<< loadApp
