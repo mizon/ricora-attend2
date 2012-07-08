@@ -52,6 +52,7 @@ data Attendee = Attendee
 data Config = Config
     { configSalt :: BSL.ByteString
     , localizeTable :: M.Map BS.ByteString T.Text
+    , scriptPath :: T.Text
     }
 
 runHandler :: Handler W.Response -> HandlerContext -> Re.ResourceT IO W.Response
@@ -124,9 +125,11 @@ topPageResponse notice = do
     stmt <- liftIO $ DB.prepare conn "SELECT id, name, comment FROM attendees ORDER BY id"
     void $ liftIO $ DB.execute stmt []
     rows <- liftIO $ DB.fetchAllRows stmt
+    spath <- scriptPath <$> asks config
     viewResponse
         [ ("attendees", H.mapSplices mapRow rows)
         , ("notice", noticeSplice)
+        , ("script-path", H.textSplice spath)
         ]
   where
     mapRow [id_, name, comment] = return [X.Element "tr" []
@@ -208,7 +211,8 @@ main = do
     WCGI.run $ application heist conn Config
         { configSalt = fromString $ conf M.! "salt"
         , localizeTable = ltable
+        , scriptPath = fromString $ conf M.! "script-path"
         }
 
 configPath :: FilePath
-configPath = ""
+configPath = "./ricora-atnd2.hs"
