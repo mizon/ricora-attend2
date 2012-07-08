@@ -113,7 +113,7 @@ handlerDeleteAttendee = do
         , DB.toSql pw
         ]
     unless (nrows == 1)
-        $ errorResponse ["invalid id or password"]
+        $ errorResponse =<< mapM localize ["delete-failed"]
     liftIO $ DB.commit conn
     redirectResponse "/"
 
@@ -140,13 +140,18 @@ topPageResponse notice = do
         toElem msg = X.Element "li" [] [X.TextNode msg]
 
 validate :: Attendee -> Handler ()
-validate a = unless (null errors) $ errorResponse errors
+validate a = do
+    es <- errors
+    unless (null es) $ errorResponse es
   where
-    errors = execWriter $ do
-        when (T.null $ attendeeName a)
-            $ tell ["no name"]
-        when (T.null $ attendeeComment a)
-            $ tell ["no comment"]
+    errors = do
+        emptyName <- T.concat <$> mapM localize ["attendee-name", "is-empty"]
+        emptyComment <- T.concat <$> mapM localize ["attendee-comment", "is-empty"]
+        return $ execWriter $ do
+            when (T.null $ attendeeName a)
+                $ tell [emptyName]
+            when (T.null $ attendeeComment a)
+                $ tell [emptyComment]
 
 refParam :: BS.ByteString -> [(BS.ByteString, T.Text)] -> Handler T.Text
 refParam key params = maybe fatalResponse pure $ lookup key params
