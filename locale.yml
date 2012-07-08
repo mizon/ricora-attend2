@@ -2,4 +2,4 @@ attendee-name: "名前"
 attendee-comment: "コメント"
 attendee-password: "パスワード"
 is-empty: が空です。
-delete-failed: Idもしくはパスワードが違います。
+delete-failed: Idかパスワードが違います。
