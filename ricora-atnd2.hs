@@ -215,4 +215,4 @@ main = do
         }
 
 configPath :: FilePath
-configPath = "./ricora-atnd2.hs"
+configPath = ""
