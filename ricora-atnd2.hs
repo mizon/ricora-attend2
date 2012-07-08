@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings
+           , ScopedTypeVariables
            , TemplateHaskell #-}
 import qualified Database.HDBC.Sqlite3 as Sqlite3
 import qualified Database.HDBC as DB
@@ -194,6 +195,9 @@ localize :: BS.ByteString -> Handler T.Text
 localize key = localizeTable <$> asks config
     >>= maybe fatalResponse pure . M.lookup key
 
+loadConfig :: Y.FromJSON a => FilePath -> IO a
+loadConfig = maybe (error "valid yaml file?") pure . Y.decode <=< BS.readFile
+
 main :: IO ()
 main = serverMain =<< loadApp
   where
@@ -210,11 +214,15 @@ main = serverMain =<< loadApp
         app req
 
     loadApp = do
-        heist <- either error id <$> H.loadTemplates "./templates" H.defaultHeistState
-        conn <- DB.ConnWrapper <$> Sqlite3.connectSqlite3 "./test.sqlite3"
-        table <- maybe (error "error occured in parse yaml") pure . Y.decode
-            =<< BS.readFile "./locale.yaml"
+        (conf :: M.Map BS.ByteString String) <- loadConfig configPath
+        heist <- either error id
+            <$> H.loadTemplates (conf M.! "templates-dir") H.defaultHeistState
+        conn <- DB.ConnWrapper <$> Sqlite3.connectSqlite3 (conf M.! "database-path")
+        ltable <- loadConfig $ conf M.! "locale-path"
         return $ application heist conn Config
-            { configSalt = "foo"
-            , localizeTable = table
+            { configSalt = fromString $ conf M.! "salt"
+            , localizeTable = ltable
             }
+
+configPath :: FilePath
+configPath = "./ricora-atnd2.yml"
