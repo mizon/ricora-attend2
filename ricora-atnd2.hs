@@ -141,17 +141,14 @@ topPageResponse notice = do
 
 validate :: Attendee -> Handler ()
 validate a = do
-    es <- errors
+    es <- execWriterT $ do
+        when (T.null $ attendeeName a) $ do
+            msg <- lift $ T.concat <$> mapM localize ["attendee-name", "is-empty"]
+            tell [msg]
+        when (T.null $ attendeeComment a) $ do
+            msg <- lift $ T.concat <$> mapM localize ["attendee-comment", "is-empty"]
+            tell [msg]
     unless (null es) $ errorResponse es
-  where
-    errors = do
-        emptyName <- T.concat <$> mapM localize ["attendee-name", "is-empty"]
-        emptyComment <- T.concat <$> mapM localize ["attendee-comment", "is-empty"]
-        return $ execWriter $ do
-            when (T.null $ attendeeName a)
-                $ tell [emptyName]
-            when (T.null $ attendeeComment a)
-                $ tell [emptyComment]
 
 refParam :: BS.ByteString -> [(BS.ByteString, T.Text)] -> Handler T.Text
 refParam key params = maybe fatalResponse pure $ lookup key params
