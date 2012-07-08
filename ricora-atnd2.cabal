@@ -29,4 +29,5 @@ Executable ricora-atnd2.cgi
         , containers >= 0.4
         , yaml >= 0.7
         , SHA >= 1.5
+        , filepath >= 1.2
     GHC-Options: -Wall -O2
