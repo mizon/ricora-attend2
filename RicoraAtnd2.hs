@@ -53,6 +53,7 @@ data Config = Config
     { configSalt :: BSL.ByteString
     , localizeTable :: M.Map BS.ByteString T.Text
     , scriptPath :: T.Text
+    , docRoot :: T.Text
     }
 
 runHandler :: Handler W.Response -> HandlerContext -> Re.ResourceT IO W.Response
@@ -101,7 +102,7 @@ handlerNewAttendee = do
         , DB.toSql encrypted
         ]
     liftIO $ DB.commit conn
-    redirectResponse "/"
+    redirectResponse =<< TE.encodeUtf8 . scriptPath <$> asks config
 
 handlerDeleteAttendee :: Handler W.Response
 handlerDeleteAttendee = do
@@ -117,7 +118,7 @@ handlerDeleteAttendee = do
     unless (nrows == 1)
         $ errorResponse =<< mapM localize ["delete-failed"]
     liftIO $ DB.commit conn
-    redirectResponse "/"
+    redirectResponse =<< TE.encodeUtf8 . scriptPath <$> asks config
 
 topPageResponse :: [T.Text] -> Handler W.Response
 topPageResponse notice = do
@@ -126,10 +127,12 @@ topPageResponse notice = do
     void $ liftIO $ DB.execute stmt []
     rows <- liftIO $ DB.fetchAllRows stmt
     spath <- scriptPath <$> asks config
+    droot <- docRoot <$> asks config
     viewResponse
         [ ("attendees", H.mapSplices mapRow rows)
         , ("notice", noticeSplice)
         , ("script-path", H.textSplice spath)
+        , ("doc-root", H.textSplice droot)
         ]
   where
     mapRow [id_, name, comment] = return [X.Element "tr" []
@@ -212,4 +215,5 @@ loadApp path = do
         { configSalt = fromString $ conf M.! "salt"
         , localizeTable = ltable
         , scriptPath = fromString $ conf M.! "script-path"
+        , docRoot = fromString $ conf M.! "doc-root"
         }
