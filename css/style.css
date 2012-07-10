@@ -1,0 +1,49 @@
+* {
+    font-size: 14px;
+}
+
+h1 {
+    border-bottom: solid 1px #CCC;
+}
+
+#container {
+    width: 600px;
+    margin: 0 auto;
+}
+
+div.section {
+    margin-bottom: 2em;
+}
+
+#notice {
+    background: #FEE;
+    border: solid 1px #FCC;
+    color: #900;
+}
+
+form.form-new dl dt {
+    float: left;
+    widht: 10em;
+}
+
+form.form-new dl dd {
+    margin-left: 10em;
+}
+
+#attendees {
+    border-collapse: collapse;
+    border: solid #CCC ;
+    border-width: 1px 0;
+    width: 100%;
+}
+
+#attendees tr th {
+    background: #EEE;
+    border: solid #CCC;
+    border-width: 1px 0;
+}
+
+#attendees tr td {
+    text-align: center;
+    line-height: 1.75;
+}
