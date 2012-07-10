@@ -21,6 +21,12 @@ div.section {
     color: #900;
 }
 
+#forms {
+    padding: 1em;
+    background: #EEF;
+    border: solid 1px #CCF;
+}
+
 form.form-new dl dt {
     float: left;
     widht: 10em;

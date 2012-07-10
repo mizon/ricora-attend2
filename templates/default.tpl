@@ -19,24 +19,26 @@
           <attendees/>
         </table>
       </div>
-      <div class="section">
-        <h2>参加登録</h2>
-        <form method="post" action="${script-path}new" class="form-new">
-          <dl>
-            <label><dt>名前</dt><dd><input name="attendee-name" type="text"/></dd></label>
-            <label><dt>パスワード</dt><dd><input name="attendee-password" type="text"/></dd></label>
-            <label><dt>ひとこと</dt><dd><input name="attendee-comment" type="text"/></dd></label>
-          </dl>
-          <button type="submit">送信</button>
-        </form>
-      </div>
-      <div class="section">
-        <h2>キャンセル</h2>
-        <form method="post" action="${script-path}delete">
-          <label>Id <input name="attendee-id" type="text"/></label>
-          <label>パスワード <input name="attendee-password" type="text"/></label>
-          <button type="submit">送信</button>
-        </form>
+      <div id="forms">
+        <div class="section">
+          <h2>参加登録</h2>
+          <form method="post" action="${script-path}new" class="form-new">
+            <dl>
+              <label><dt>名前</dt><dd><input name="attendee-name" type="text"/></dd></label>
+              <label><dt>パスワード</dt><dd><input name="attendee-password" type="text"/></dd></label>
+              <label><dt>ひとこと</dt><dd><input name="attendee-comment" type="text"/></dd></label>
+            </dl>
+            <button type="submit">送信</button>
+          </form>
+        </div>
+        <div class="section">
+          <h2>キャンセル</h2>
+          <form method="post" action="${script-path}delete">
+            <label>Id <input name="attendee-id" type="text"/></label>
+            <label>パスワード <input name="attendee-password" type="text"/></label>
+            <button type="submit">送信</button>
+          </form>
+        </div>
       </div>
     </div>
   </body>
