@@ -142,7 +142,9 @@ topPageResponse notice = do
         ]]
     mapRow _ = undefined
 
-    noticeSplice = return [X.Element "ul" [] $ toElem <$> notice]
+    noticeSplice
+        | length notice == 0 = return [X.TextNode ""]
+        | otherwise = return [X.Element "ul" [("id", "notice")] $ toElem <$> notice]
       where
         toElem msg = X.Element "li" [] [X.TextNode msg]
 
