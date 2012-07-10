@@ -6,7 +6,6 @@ module RicoraAtnd2
 
 import qualified Database.HDBC.Sqlite3 as Sqlite3
 import qualified Database.HDBC as DB
-import qualified Network.Wai.Handler.CGI as WCGI
 import qualified Network.Wai.Parse as WP
 import qualified Network.Wai as W
 import qualified Network.HTTP.Types as HT
@@ -21,7 +20,6 @@ import qualified Data.Map as M
 import qualified Blaze.ByteString.Builder as BB
 import qualified Control.Monad.Trans.Resource as Re
 import qualified Text.XmlHtml as X
-import System.FilePath
 import Data.String
 import Control.Monad.Trans
 import Control.Monad.Reader
