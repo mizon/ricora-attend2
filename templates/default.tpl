@@ -25,7 +25,7 @@
           <form method="post" action="${script-path}new" class="form-new">
             <dl>
               <label><dt>名前</dt><dd><input name="attendee-name" type="text"/></dd></label>
-              <label><dt>パスワード</dt><dd><input name="attendee-password" type="text"/></dd></label>
+              <label><dt>パスワード</dt><dd><input name="attendee-password" type="password"/></dd></label>
               <label><dt>ひとこと</dt><dd><input name="attendee-comment" type="text"/></dd></label>
             </dl>
             <button type="submit">送信</button>
